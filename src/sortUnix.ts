@@ -33,4 +33,5 @@ cp.on('error', err => {
 
 cp.on('close', code => {
   writeStream.end()
+  process.exit(0)
 })
