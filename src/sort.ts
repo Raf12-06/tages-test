@@ -1,30 +1,37 @@
-import { statSync } from 'node:fs'
-import os from 'node:os'
-import { fork } from 'child_process'
+import { statSync, createReadStream } from 'node:fs'
 
 const stat = statSync('text.txt')
 if (!stat.isFile()) {
   process.exit(1)
 }
 
-process.env.PART_BYTE = String(1_000_000) //"524_288_000"
-process.env.FILE_SIZE = String(stat.size)
+const FILE_SIZE = stat.size
+const PART_BYTE = 1_000_000 //"524_288_000"
+let NUM_PART = Math.ceil(Number(FILE_SIZE) / PART_BYTE)
+let OFFSET_BYTE = 0
 
-let cntCpu = os.cpus().length
+async function processFile() {
+  while (NUM_PART) {
+    await new Promise((res, rej) => {
+      const readStream = createReadStream('text.txt', {
+        encoding: 'utf-8',
+        start: OFFSET_BYTE,
+        end: OFFSET_BYTE + PART_BYTE,
+      })
 
-startCp();
+      readStream.on('data', data => {
 
-function startCp() {
-  if (cntCpu) {
-    const cp = fork('build/processFile.js',{
-      env: process.env
-    })
+      })
 
-    cp.on('message', message => {
-      if (message === 'PART_DONE') {
-        cntCpu--
-        startCp();
-      }
+      readStream.on('close', () => {
+        NUM_PART--
+        OFFSET_BYTE += PART_BYTE
+      })
+
+      readStream.on('error', err => {
+        console.log(err);
+      })
     })
   }
 }
+
