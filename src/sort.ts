@@ -9,9 +9,12 @@ const PART_BYTE = 524_288_000
 
 const listFile = ['text.txt', 'text2.txt'];
 
+let wasChange = false;
+let flag = true;
 async function processFile() {
 
-  for (let i = 0; i < 10; i++) {
+  do {
+    wasChange = false;
     await new Promise((res, rej) => {
       const readStream = createReadStream(listFile[0], {
         encoding: 'utf-8',
@@ -39,8 +42,8 @@ async function processFile() {
       })
     })
 
-    listFile.reverse();
-  }
+    // flag = wasChange;
+  } while (flag)
 }
 
 let lostRow = ''
