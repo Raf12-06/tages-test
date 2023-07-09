@@ -1,13 +1,26 @@
 import { statSync, createReadStream, appendFileSync, writeFileSync } from 'node:fs'
+import { extname, basename } from 'node:path'
 
-const stat = statSync('text.txt')
+if (process.argv.length < 3) {
+  console.log('Enter the file name')
+  process.exit(1)
+}
+
+const file = process.argv[2];
+
+if (extname(file) !== '.txt') {
+  console.log('Require .txt format')
+  process.exit(1)
+}
+
+const stat = statSync(file)
 if (!stat.isFile()) {
   process.exit(1)
 }
 
-const PART_BYTE = 524_288_000
+const listFile = [file, basename('temp-' + file)];
 
-const listFile = ['text.txt', 'text2.txt'];
+const PART_BYTE = 524_288_000
 
 let cntRow = 0;
 async function processFile() {
