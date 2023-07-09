@@ -9,12 +9,10 @@ const PART_BYTE = 524_288_000
 
 const listFile = ['text.txt', 'text2.txt'];
 
-let wasChange = false;
-let flag = true;
+let cntRow = 0;
 async function processFile() {
 
-  do {
-    wasChange = false;
+   do {
     await new Promise((res, rej) => {
       const readStream = createReadStream(listFile[0], {
         encoding: 'utf-8',
@@ -23,6 +21,7 @@ async function processFile() {
 
       readStream.on('data', (chunk: string) => {
         const rowPart = normalizeChunk(chunk).split('\n')
+        if (!cntRow) cntRow += rowPart.filter(v => v).length;
         const rows = compareRows(rowPart);
         appendFileSync(listFile[1], rows);
       })
@@ -41,9 +40,8 @@ async function processFile() {
         rej(err);
       })
     })
-
-    // flag = wasChange;
-  } while (flag)
+    cntRow--
+  } while (cntRow > 0)
 }
 
 let lostRow = ''
