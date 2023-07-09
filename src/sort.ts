@@ -1,4 +1,4 @@
-import { statSync, createReadStream, createWriteStream } from 'node:fs'
+import { statSync, createReadStream, appendFileSync, writeFileSync } from 'node:fs'
 
 const stat = statSync('text.txt')
 if (!stat.isFile()) {
@@ -7,14 +7,12 @@ if (!stat.isFile()) {
 
 const PART_BYTE = 524_288_000
 
-const listFile = ['text.txt', 'text2.txt']
+const listFile = ['text.txt', 'text2.txt'];
 
-let wasChange = false
 async function processFile() {
 
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 10; i++) {
     await new Promise((res, rej) => {
-      const writeStream = createWriteStream(listFile[1])
       const readStream = createReadStream(listFile[0], {
         encoding: 'utf-8',
         highWaterMark: PART_BYTE
@@ -23,16 +21,20 @@ async function processFile() {
       readStream.on('data', (chunk: string) => {
         const rowPart = normalizeChunk(chunk).split('\n')
         const rows = compareRows(rowPart);
-        writeStream.write(rows);
+        appendFileSync(listFile[1], rows);
       })
 
       readStream.on('close', () => {
-        writeStream.close()
+        if (lastStr) {
+          appendFileSync(listFile[1], lastStr + '\n')
+          lastStr = 0
+        }
+        writeFileSync(listFile[0],'')
+        listFile.reverse();
         res(null)
       })
 
       readStream.on('error', err => {
-        writeStream.close()
         rej(err);
       })
     })
@@ -63,16 +65,15 @@ function normalizeChunk(chunk: string) {
   }
 }
 
-let lastStr = '';
+let lastStr = 0;
 function compareRows(rows: string[]): string {
   let resultStr = '';
   for (let i = 0; i < rows.length; i++) {
-    const str = rows[i]
+    const str = Number(rows[i])
     if (str) {
       if (!lastStr) lastStr = str
       else {
         if (str > lastStr) {
-          wasChange = true
           resultStr += lastStr + '\n'
           lastStr = str
         } else {
